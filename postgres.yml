@@ -1,0 +1,77 @@
+- hosts: server1:server2:server3
+  vars:
+    pg_dir: /var/lib/pgsql/10/data/
+  tasks:
+
+# ping 
+    - name: pinging
+      ping:
+
+# install rpms
+    - name: configure repo
+      yum:
+        name: https://download.postgresql.org/pub/repos/yum/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm 
+    - name: install pg10
+      yum: 
+        name: postgresql10
+    - name: install pg10-server
+      yum: 
+        name: postgresql10-server
+    - name: install pg10-contrib
+      yum:
+        name: postgresql10-contrib
+
+# config postgres
+    - name: initdb
+      shell: /usr/pgsql-10/bin/postgresql-10-setup initdb
+      args:
+        creates: "{{ pg_dir }}postgresql.conf"
+    - name: update config file
+      template:
+        src: postgresql.conf
+        dest: "{{ pg_dir }}"
+        owner: postgres
+    - name:
+      template:
+        src: pg_hba.conf
+        dest: "{{ pg_dir }}" 
+
+# config SSL
+    - name: enable ssl phase 1
+      shell: openssl req -nodes -new -text -out server.req -subj "/" || test -e  server.req 
+    - name: enable ssl phase 2
+      shell: openssl rsa -in privkey.pem -out {{ pg_dir }}server.key
+    - name: enable ssl phase 3
+      shell: openssl req -x509 -in server.req -text -key {{ pg_dir }}server.key -out {{ pg_dir }}server.crt 
+    - name: enable ssl phase 4
+      shell: chmod og-rwx {{ pg_dir }}server.key
+    - name: enable ssl phase 5
+      shell: chown postgres:postgres {{ pg_dir }}server.key {{ pg_dir }}server.crt
+
+# config kernel parameters
+    - name: set huge pages
+      sysctl: 
+         name: vm.nr_hugepages
+         value: 3200
+         sysctl_set: yes
+         reload: yes
+    - name: set dirty ratio 1
+      sysctl: 
+         name: vm.dirty_background_ratio
+         value: 99
+         sysctl_set: yes
+         reload: yes
+    - name: set dirty ratio 2
+      sysctl:
+         name: vm.dirty_ratio
+         value: 99
+         sysctl_set: yes
+         reload: yes
+
+# reboot PostgreSQL
+    - name: enabled and started
+      systemd: 
+        state: started
+        enabled: yes
+        name: postgresql-10
+        
