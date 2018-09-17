@@ -39,19 +39,24 @@
 # config SSL
     - name: enable ssl phase 1
       shell: openssl req -nodes -new -text -out server.req -subj "/" || test -e  server.req 
-      creates: "{{ pg_dir }}server.key"
+      args:
+         creates: "{{ pg_dir }}server.key"
     - name: enable ssl phase 2
       shell: openssl rsa -in privkey.pem -out {{ pg_dir }}server.key
-      creates: "{{ pg_dir }}server.key"
+      args:
+         creates: "{{ pg_dir }}server.key"
     - name: enable ssl phase 3
       shell: openssl req -x509 -in server.req -text -key {{ pg_dir }}server.key -out {{ pg_dir }}server.crt 
-      creates: "{{ pg_dir }}server.key"
+      args:
+         creates: "{{ pg_dir }}server.key"
     - name: enable ssl phase 4
       shell: chmod og-rwx {{ pg_dir }}server.key
-      creates: "{{ pg_dir }}server.key"
+      args:
+         creates: "{{ pg_dir }}server.key"
     - name: enable ssl phase 5
       shell: chown postgres:postgres {{ pg_dir }}server.key {{ pg_dir }}server.crt
-      creates: "{{ pg_dir }}server.key"
+      args:
+         creates: "{{ pg_dir }}server.key"
 
 # config kernel parameters
     - name: set huge pages
@@ -73,10 +78,28 @@
          sysctl_set: yes
          reload: yes
 
-# reboot PostgreSQL
-    - name: enabled and started
-      systemd: 
-        state: started
-        enabled: yes
-        name: postgresql-10
-        
+# install Pgbadger
+    - name: install httpd
+      yum: 
+         name: httpd
+    - name: enable httpd
+      systemd:
+         name: httpd
+         state: started
+    - name: create pgbadger dir
+      shell: mkdir -p /var/www/html/pgbadger
+      args:
+         creates: /var/www/html/pgbadger
+    - name: chown of the directory
+      shell: chown apache:apache /var/www/html/pgbadger
+    - name: chmod of the directory
+      shell: chmod o+wr /var/www/html/pgbadger
+    - name: install pgbadger
+      yum:
+         name: pgbadger
+    - name: register cron entry
+      cron:
+         name: create pgbadger report
+         job: "pgbadger -I  -O /var/www/html/pgbadger /var/lib/pgsql/10/data/log/postgresql.log" 
+         minute: 0
+         user: postgres 

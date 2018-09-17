@@ -25,7 +25,9 @@
      - name: install sysbench
        yum:
          name: sysbench
-
+     - name: install lsof
+       yum:
+         name: lsof
 # enable systemcd 
      - name: enable sysstat
        systemd: 

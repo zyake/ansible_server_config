@@ -1,0 +1,21 @@
+- hosts: server1:server2:server3
+  tasks:
+# enable systemcd 
+     - name: enable PostgreSQL 
+       firewalld: 
+          port: 5432/tcp
+          permanent: true
+          state: enabled
+          immediate: yes
+     - name: enable http
+       firewalld:
+          port: 80/tcp
+          permanent: true
+          state: enabled
+          immediate: yes
+     - name: tomcat https
+       firewalld:
+          port: 8443/tcp
+          permanent: true
+          state: enabled
+          immediate: yes
