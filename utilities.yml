@@ -1,0 +1,34 @@
+- hosts: server1:server2:server3
+  tasks:
+# install rpms
+     - name: install epel
+       yum: 
+         name: epel-release
+     - name: install traceroute
+       yum: 
+         name: traceroute
+     - name: install wget
+       yum: 
+         name: wget
+     - name: install sysstat
+       yum: 
+         name: sysstat
+     - name: install nicstat
+       yum: 
+         name: "http://packages.psychotic.ninja/7/base/x86_64/RPMS//nicstat-1.95-3.el7.psychotic.x86_64.rpm"
+     - name: install iotop
+       yum: 
+         name: iotop
+     - name: install vim
+       yum:  
+         name: vim
+     - name: install sysbench
+       yum:
+         name: sysbench
+
+# enable systemcd 
+     - name: enable sysstat
+       systemd: 
+          name: sysstat
+          state: started
+     

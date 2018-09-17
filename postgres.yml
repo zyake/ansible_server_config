@@ -39,20 +39,25 @@
 # config SSL
     - name: enable ssl phase 1
       shell: openssl req -nodes -new -text -out server.req -subj "/" || test -e  server.req 
+      creates: "{{ pg_dir }}server.key"
     - name: enable ssl phase 2
       shell: openssl rsa -in privkey.pem -out {{ pg_dir }}server.key
+      creates: "{{ pg_dir }}server.key"
     - name: enable ssl phase 3
       shell: openssl req -x509 -in server.req -text -key {{ pg_dir }}server.key -out {{ pg_dir }}server.crt 
+      creates: "{{ pg_dir }}server.key"
     - name: enable ssl phase 4
       shell: chmod og-rwx {{ pg_dir }}server.key
+      creates: "{{ pg_dir }}server.key"
     - name: enable ssl phase 5
       shell: chown postgres:postgres {{ pg_dir }}server.key {{ pg_dir }}server.crt
+      creates: "{{ pg_dir }}server.key"
 
 # config kernel parameters
     - name: set huge pages
       sysctl: 
          name: vm.nr_hugepages
-         value: 3200
+         value: 750 
          sysctl_set: yes
          reload: yes
     - name: set dirty ratio 1
