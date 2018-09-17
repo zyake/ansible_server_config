@@ -1,4 +1,4 @@
-- hosts: server1:server2:server3
+- hosts: server1:server3
   tasks:
 # install rpms
      - name: install epel
@@ -28,6 +28,10 @@
      - name: install lsof
        yum:
          name: lsof
+     - name: install sshpass
+       yum:
+          name: sshpass
+
 # enable systemcd 
      - name: enable sysstat
        systemd: 

@@ -1,4 +1,4 @@
-- hosts: server1:server2:server3
+- hosts: server1:server3
   vars:
     pg_dir: /var/lib/pgsql/10/data/
   tasks:
@@ -97,9 +97,52 @@
     - name: install pgbadger
       yum:
          name: pgbadger
-    - name: register cron entry
+    - name: register cron pgbadger entry
       cron:
          name: create pgbadger report
-         job: "pgbadger -I  -O /var/www/html/pgbadger /var/lib/pgsql/10/data/log/postgresql.log" 
+         job: "sudo pgbadger -I  -O /var/www/html/pgbadger /var/lib/pgsql/10/data/log/postgresql.log" 
          minute: 0
          user: postgres 
+
+# primary configuration
+- hosts: server1
+  vars:
+     script_dir: /var/lib/pgsql/
+  tasks:
+    - name: install daily backup script
+      template:
+         src: backup_postgresql.sh
+         dest: "{{ script_dir }}backup_postgresql.sh"
+         owner: postgres
+    - name: setup cron 
+      cron:
+         name: register backup job
+         job: "/bin/sh {{ script_dir }}backup_postgresql.sh" 
+         minute: 0
+         hour: 23
+         user: postgres
+
+# standby configuration
+- hosts: server2
+  vars:
+     backup_dir: /var/lib/pgsql/ 
+  tasks:
+     - name: setup cron job
+       cron:
+          name: register cleanup job
+          job: find {{ backup_dir }}archive_logs/ -type f -mtime +3 -delete
+          minute: 0
+          hour: 23
+          user: postgres
+     - name: create archive log dir
+       shell: "mkdir {{ backup_dir }}archive_logs"
+       args:
+         creates: "{{ backup_dir }}archive_logs"
+     - name: change own
+       shell: chown postgres:postgres /var/lib/pgsql/archive_logs
+     - name: create backup
+       shell: "mkdir {{ backup_dir }}backups"
+       args:
+          creates: "{{ backup_dir }}backups"
+     - name: change own
+       shell: "chown postgres:postgres {{ backup_dir }}backups"
