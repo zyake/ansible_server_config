@@ -81,6 +81,7 @@
       systemd:
          name: httpd
          state: started
+         enabled: yes
     - name: create pgbadger dir
       shell: mkdir -p /var/www/html/pgbadger
       args:
@@ -97,6 +98,7 @@
          name: create pgbadger report
          job: "sudo pgbadger -I  -O /var/www/html/pgbadger /var/lib/pgsql/10/data/log/postgresql.log" 
          minute: 0
+         hour: 23
          user: postgres 
 
 # primary configuration
